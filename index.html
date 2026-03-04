@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الرئيسية - مدير الحلقة</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --olive: #808000; --beige: #fdfaf5; }
+        body { background: var(--beige); font-family: sans-serif; margin: 0; padding-bottom: 80px; }
+
+        /* الهيدر العلوي بدون صورة */
+        .header-profile {
+            background: var(--olive);
+            color: white;
+            padding: 50px 20px; /* زيادة الطول قليلاً لتعويض غياب الصورة */
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header-profile h4 { 
+            margin: 0; 
+            font-size: 22px; 
+            font-weight: bold; 
+            letter-spacing: 1px;
+        }
+        .header-profile p { 
+            margin: 8px 0 0; 
+            font-size: 15px; 
+            opacity: 0.9; 
+            border-top: 1px solid rgba(255,255,255,0.2);
+            display: inline-block;
+            padding-top: 8px;
+        }
+        .teacher-badge {
+            display: block;
+            margin-top: 15px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* المحتوى الرئيسي */
+        .main-content { padding: 30px 20px; text-align: center; }
+        .welcome-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            border: 1px solid #eee;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        /* القائمة السفلية الثابتة */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+        .nav-item {
+            text-decoration: none;
+            color: #888;
+            text-align: center;
+            font-size: 11px;
+            flex: 1;
+        }
+        .nav-item i {
+            display: block;
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+        .nav-item.active { color: var(--olive); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header-profile">
+    <h4 id="mainHalaqa">حلقة القرآن الكريم</h4>
+    <p id="mainCenter">اسم المركز التعليمي</p>
+    <br>
+    <div class="teacher-badge">
+        <i class="fas fa-user-tie"></i> المعلم: <span id="mainTeacher">...</span>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="welcome-card">
+        <h6 class="text-dark fw-bold">نظام إدارة الحلقة الذكي</h6>
+        <p class="text-muted small mb-0">يمكنك البدء بتسجيل حضور وحفظ الطلاب من قسم "الطلاب" في القائمة السفلية.</p>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html" class="nav-item active">
+        <i class="fas fa-home"></i>
+        <span>الرئيسية</span>
+    </a>
+    <a href="students.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>الطلاب</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+        <i class="fas fa-user-circle"></i>
+        <span>الملف الشخصي</span>
+    </a>
+</div>
+
+<script>
+    // تحديث البيانات من الذاكرة (LocalStorage)
+    function updateUI() {
+        const profile = JSON.parse(localStorage.getItem('teacherProfile') || '{}');
+        if (profile.name) {
+            document.getElementById('mainTeacher').innerText = profile.name;
+            document.getElementById('mainCenter').innerText = profile.center;
+            document.getElementById('mainHalaqa').innerText = profile.halaqa;
+        }
+    }
+
+    // التنفيذ فور تحميل الصفحة
+    window.onload = updateUI;
+</script>
+
+</body>
+</html>
