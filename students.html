@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سجل المتابعة الرسمي</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --olive: #808000; --beige: #fdfaf5; --dark-olive: #556b2f; }
+        body { background: var(--beige); font-family: 'Times New Roman', serif; padding-bottom: 90px; }
+        
+        .official-stamp-header { text-align: center; border-bottom: 2px double var(--olive); margin: 15px; padding-bottom: 10px; color: var(--dark-olive); }
+        .stamp-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-decoration: underline; }
+        .stamp-details { display: flex; justify-content: space-around; flex-wrap: wrap; font-size: 13px; }
+
+        .nav-pills .nav-link { border-radius: 0; color: var(--olive); border: 1px solid var(--olive); margin: 2px; font-weight: bold; }
+        .nav-pills .nav-link.active { background: var(--olive) !important; color: white !important; }
+
+        .table-container { background: white; padding: 0; overflow-x: auto; margin: 10px; border: 1px solid var(--olive); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--olive); color: white; padding: 10px; font-size: 12px; border: 1px solid white; text-align: center; }
+        td { padding: 8px 5px; border: 1px solid #ddd; text-align: center; font-size: 12px; color: #333; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid var(--olive); z-index: 1000; }
+        .nav-item { text-decoration: none; color: #777; text-align: center; font-size: 11px; flex: 1; }
+        .nav-item i { display: block; font-size: 20px; margin-bottom: 3px; }
+        .nav-item.active { color: var(--olive); }
+
+        /* تنسيق التصدير */
+        #export-template { width: 800px; padding: 40px; background: white; position: absolute; left: -9999px; border: 5px double var(--olive); }
+    </style>
+</head>
+<body>
+
+<ul class="nav nav-pills nav-fill p-2">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#add">إضافة بيانات</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#list" onclick="render()">عرض السجل اليومي</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="add">
+        <div class="card m-3 p-3 shadow-sm border-0 rounded-3">
+            <form id="stForm">
+                <div class="row g-2 mb-3">
+                    <div class="col-8">
+                        <label class="small fw-bold">اسم الطالب</label>
+                        <input type="text" id="name" class="form-control border-secondary" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="small fw-bold">التفقد</label>
+                        <select id="att" class="form-select border-secondary">
+                            <option value="م">م</option>
+                            <option value="غ">غ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-7">
+                        <label class="small fw-bold">رقم الصفحة</label>
+                        <input type="number" id="hPage" class="form-control border-secondary" required>
+                    </div>
+                    <div class="col-5">
+                        <label class="small fw-bold">التقدير</label>
+                        <select id="hGrade" class="form-select border-secondary">
+                            <option>ممتاز</option><option>جيد جداً</option><option>جيد</option><option style="color:red">إعادة</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><input type="number" id="rFrom" class="form-control" placeholder="مراجعة من ص" required></div>
+                    <div class="col-6"><input type="number" id="rTo" class="form-control" placeholder="مراجعة إلى ص" required></div>
+                </div>
+                <div class="form-check form-switch mb-3 p-2 border rounded d-flex justify-content-between align-items-center">
+                    <label class="form-check-label small fw-bold">تعيين كـ نجم الحلقة</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="isStar">
+                </div>
+                <input type="text" id="note" class="form-control mb-3" placeholder="ملاحظات...">
+                <button type="submit" class="btn w-100 text-white fw-bold py-2" style="background:var(--olive)">اعتماد البيانات</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="list">
+        <div class="official-stamp-header">
+            <div class="stamp-title">سجل متابعة الطلاب اليومي</div>
+            <div class="stamp-details">
+                <span>المركز: <b id="dispCenter">...</b></span>
+                <span>الحلقة: <b id="dispHalaqa">...</b></span>
+                <span>المعلم: <b id="dispTeacher">...</b></span>
+            </div>
+        </div>
+
+        <div id="starContainer" class="text-center fw-bold mb-2 d-none" style="color:var(--dark-olive)">
+            ★ نجم الحلقة: <span id="starName"></span> ★
+        </div>
+
+        <div class="table-container shadow-sm">
+            <table>
+                <thead>
+                    <tr><th>الطالب</th><th>ت</th><th>الحفظ</th><th>المراجعة</th><th>الملاحظات</th></tr>
+                </thead>
+                <tbody id="tBody"></tbody>
+            </table>
+        </div>
+        <button class="btn btn-outline-dark btn-sm rounded-pill px-4 shadow-sm position-fixed" style="bottom:85px; left:15px;" onclick="showExportOptions()">تصدير كملف</button>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html" class="nav-item"><i class="fas fa-home"></i><span>الرئيسية</span></a>
+    <a href="students.html" class="nav-item active"><i class="fas fa-users"></i><span>الطلاب</span></a>
+    <a href="profile.html" class="nav-item"><i class="fas fa-user-circle"></i><span>الملف الشخصي</span></a>
+</div>
+
+<div id="export-template">
+    <div style="text-align:center; border:2px solid black; padding:20px; margin-bottom:20px;">
+        <h2 id="pCenter"></h2>
+        <h3 id="pHalaqa"></h3>
+        <hr>
+        <p>سجل المتابعة اليومي - إشراف المعلم: <span id="pTeacher"></span></p>
+        <p>التاريخ: <span id="pDate"></span></p>
+    </div>
+    <table style="width:100%; border-collapse: collapse; border:2px solid black;">
+        <thead>
+            <tr style="background:#f0f0f0;">
+                <th style="padding:10px; border:1px solid black;">الطالب</th>
+                <th style="padding:10px; border:1px solid black;">ت</th>
+                <th style="padding:10px; border:1px solid black;">الحفظ</th>
+                <th style="padding:10px; border:1px solid black;">المراجعة</th>
+                <th style="padding:10px; border:1px solid black;">الملاحظات</th>
+            </tr>
+        </thead>
+        <tbody id="pBody"></tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    function loadOfficialData() {
+        const p = JSON.parse(localStorage.getItem('teacherProfile') || '{}');
+        document.getElementById('dispCenter').innerText = p.center || 'غير محدد';
+        document.getElementById('dispHalaqa').innerText = p.halaqa || 'غير محدد';
+        document.getElementById('dispTeacher').innerText = p.name || 'غير محدد';
+    }
+
+    document.getElementById('stForm').onsubmit = (e) => {
+        e.preventDefault();
+        const star = document.getElementById('isStar').checked;
+        let data = JSON.parse(localStorage.getItem('HalaqaData') || '[]');
+        if(star) data.forEach(s => s.isStar = false);
+        data.push({
+            n: document.getElementById('name').value,
+            at: document.getElementById('att').value,
+            hp: document.getElementById('hPage').value,
+            hg: document.getElementById('hGrade').value,
+            rf: document.getElementById('rFrom').value,
+            rt: document.getElementById('rTo').value,
+            nt: document.getElementById('note').value || '---',
+            isStar: star
+        });
+        localStorage.setItem('HalaqaData', JSON.stringify(data));
+        Swal.fire({title:'تم الحفظ', icon:'success', timer:800, showConfirmButton:false});
+        e.target.reset();
+        render();
+    };
+
+    function render() {
+        const data = JSON.parse(localStorage.getItem('HalaqaData') || '[]');
+        const starBox = document.getElementById('starContainer');
+        let starName = "";
+        document.getElementById('tBody').innerHTML = data.map((s, i) => {
+            if(s.isStar) { starName = s.n; starBox.classList.remove('d-none'); }
+            return `<tr style="${s.isStar ? 'background:#f9f9f9; font-weight:bold;' : ''}">
+                <td onclick="del(${i})">${s.isStar ? '★ ' : ''}${s.n}</td>
+                <td class="${s.at=='غ'?'text-danger':''}">${s.at}</td>
+                <td style="${s.hg=='إعادة'?'color:red':''}">ص${s.hp}</td>
+                <td>${s.rf}-${s.rt}</td>
+                <td>${s.nt}</td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="5">لا توجد بيانات</td></tr>';
+        document.getElementById('starName').innerText = starName;
+        if(!starName) starBox.classList.add('d-none');
+    }
+
+    function del(i) {
+        Swal.fire({title:'حذف السجل؟', icon:'warning', showCancelButton:true}).then(r => {
+            if(r.isConfirmed){
+                let d = JSON.parse(localStorage.getItem('HalaqaData'));
+                d.splice(i, 1);
+                localStorage.setItem('HalaqaData', JSON.stringify(d));
+                render();
+            }
+        });
+    }
+
+    // وظيفة إظهار خيارات التصدير
+    function showExportOptions() {
+        const data = JSON.parse(localStorage.getItem('HalaqaData') || '[]');
+        if(!data.length) return Swal.fire('الكشف فارغ');
+
+        Swal.fire({
+            title: 'اختر صيغة التصدير',
+            text: "كيف ترغب في تنزيل التقرير؟",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'PDF (مستند)',
+            cancelButtonText: 'JPG (صورة)',
+            confirmButtonColor: '#808000',
+            cancelButtonColor: '#2c3e50',
+            reverseButtons: true
+        }).then((result) => {
+            prepareTemplate();
+            if (result.isConfirmed) {
+                exportAsPDF();
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                exportAsJPG();
+            }
+        });
+    }
+
+    function prepareTemplate() {
+        const data = JSON.parse(localStorage.getItem('HalaqaData') || '[]');
+        const p = JSON.parse(localStorage.getItem('teacherProfile') || '{}');
+        document.getElementById('pCenter').innerText = p.center;
+        document.getElementById('pHalaqa').innerText = p.halaqa;
+        document.getElementById('pTeacher').innerText = p.name;
+        document.getElementById('pDate').innerText = new Date().toLocaleDateString('ar-EG');
+        document.getElementById('pBody').innerHTML = data.map(s => `
+            <tr>
+                <td style="padding:10px; border:1px solid black;">${s.isStar ? '★ ' : ''}${s.n}</td>
+                <td style="padding:10px; border:1px solid black;">${s.at}</td>
+                <td style="padding:10px; border:1px solid black; ${s.hg=='إعادة'?'color:red':''}">ص ${s.hp} (${s.hg})</td>
+                <td style="padding:10px; border:1px solid black;">${s.rf}-${s.rt}</td>
+                <td style="padding:10px; border:1px solid black;">${s.nt}</td>
+            </tr>`).join('');
+    }
+
+    function exportAsJPG() {
+    html2canvas(document.getElementById('export-template'), {scale:2}).then(canvas => {
+        // تحويل الكانفاس إلى رابط صورة
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // فتح الصورة في نافذة جديدة أو عرضها للمستخدم ليقوم بحفظها يدوياً
+        const newWindow = window.open();
+        if (newWindow) {
+            newWindow.document.write(`<img src="${imageData}" style="width:100%;">`);
+            newWindow.document.title = "اضغط مطولاً على الصورة لحفظها";
+        } else {
+            // إذا منع المتصفح النوافذ المنبثقة، سنعرضها في نفس الصفحة
+            Swal.fire({
+                title: 'تم إنشاء الصورة',
+                text: 'اضغط مطولاً على الصورة بالأسفل ثم اختر "حفظ الصورة"',
+                imageUrl: imageData,
+                imageAlt: 'تقرير الحلقة',
+            });
+        }
+    });
+}
+
+
+    function exportAsJPG() {
+        html2canvas(document.getElementById('export-template'), {scale:2}).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `تقرير_الحلقة.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        });
+    }
+
+    window.onload = () => { loadOfficialData(); render(); };
+</script>
+</body>
+</html>
